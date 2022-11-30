@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:action="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>注册登录</title>
+</head>
+<body>
+    <div>
+        <div>
+            <h1>注册</h1>
+            <form action="http://localhost:3000/api/user/register" method="post" id = "myForm">
+                用户名:<br>
+                <input type="text" name="user_name">
+                <br>
+                密码:<br>
+                <input type="text" name="password">
+                <br>
+                邮箱:<br>
+                <input type="email" name="email" id="email">
+                <button type="button" onclick="GetCode()">获取验证码</button>
+                <br>
+                验证码:<br>
+                <input type="text" name="code">
+                <br>
+                头像:<br>
+                <input type="file" name="file">
+                <br>
+                <input type="submit" value="提交">
+                <br>
+            </form>
+        </div>
+    </div>
+<script>
+    function GetCode() {
+        var xhttp = new XMLHttpRequest();
+        var email = document.getElementById('email').value
+        var formData = new FormData()
+        formData.append(`email`, email)
+        xhttp.open("POST", "http://localhost:3000/api/user/register/code", true);
+        xhttp.send(formData)
+        xhttp.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                alert(xhttp.responseText)
+            }
+        }
+    }
+</script>
+</body>
+</html>
