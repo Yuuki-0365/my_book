@@ -1,0 +1,124 @@
+*{
+    margin: 0;
+    padding: 0;
+}
+body{
+    background-image: url("../s.jpg");
+}
+
+.control{
+    width: 510px;
+    background: white;
+    position: absolute;
+    top: 50%;
+    left: 30%;
+    transform: translate(-50%,-50%);
+    border-radius: 5px;
+}
+.item{
+    width: 510px;
+    height: 60px;
+    background: #eeeeee;
+}
+.item div{
+    width: 170px;
+    height: 60px;
+    display: inline-block;
+    color: black;
+    font-size: 18px;
+    text-align: center;
+    line-height: 60px;
+    cursor: pointer;
+}
+.content{
+    width: 100%;
+}
+
+.input{
+    width: 450px;
+    padding-left: 30px;
+}
+.code {
+    display: flex;
+    border-radius: 3px;
+    border: 1px solid #adadad;
+    padding: 0px;
+    height: 40px;
+    margin: 0px;
+}
+
+.code input {
+    width: 60%;
+    height: 40px;
+}
+.code button {
+    width: 30%;
+    text-align: center;
+    border: none;
+    background: white;
+    font-family: Arial;
+    margin: 0px;
+    padding: 0px;
+    height: 40px;
+}
+.code img {
+    width: 10%;
+}
+.input_button {
+    display: flex;
+    border-radius: 3px;
+    border: 1px solid #adadad;
+    padding: 0px;
+    height: 40px;
+    margin: 0px;
+}
+.input_button img {
+    width: 10%;
+    height: 40px;
+}
+.input_button input {
+    width: 90%;
+    height: 40px;
+}
+
+p{
+    color: #4a4a4a;
+    margin-top: 30px;
+    margin-bottom: 6px;
+    font-size: 15px;
+}
+.content input[type="text"], .content input[type="password"]{
+    width: 100%;
+    height: 40px;
+    border-radius: 3px;
+    border: 1px solid #adadad;
+    padding: 0 10px;
+    box-sizing: border-box;
+}
+.content input[type="submit"]{
+    margin-top: 40px;
+    width: 100%;
+    height: 40px;
+    border-radius: 5px;
+    color: white;
+    border: 1px solid #adadad;
+    background: #00dd60;
+    cursor: pointer;
+    letter-spacing: 4px;
+    margin-bottom: 40px;
+}
+.active{
+    background: white;
+}
+.item div:hover{
+    background: #f6f6f6;
+}
+
+#earth {
+    width: 300px;
+    position: absolute;
+    top: 30%;
+    left: 80%;
+    transform: translate(-50%,-50%);
+    border-radius: 5px;
+}

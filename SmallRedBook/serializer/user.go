@@ -14,6 +14,7 @@ type User struct {
 }
 
 type Follower struct {
+	UserId       string `json:"user_id"`
 	UserName     string `json:"user_name"`
 	Avatar       string `json:"avatar"`
 	Introduction string `json:"introduction"`
@@ -21,6 +22,7 @@ type Follower struct {
 }
 
 type Fan struct {
+	UserId       string `json:"user_id"`
 	UserName     string `json:"user_name"`
 	Avatar       string `json:"avatar"`
 	Introduction string `json:"introduction"`
@@ -68,6 +70,7 @@ func BuildFollower(user *model.User) *Follower {
 		Avatar:       conf.Host + conf.HttpPort + conf.AvatarPath + user.Avatar,
 		Introduction: user.Introduction,
 		CreateAt:     user.CreatedAt,
+		UserId:       user.UserId,
 	}
 }
 
@@ -85,6 +88,7 @@ func BuildFan(user *model.User) *Fan {
 		Avatar:       conf.Host + conf.HttpPort + conf.AvatarPath + user.Avatar,
 		Introduction: user.Introduction,
 		CreateAt:     user.CreatedAt,
+		UserId:       user.UserId,
 	}
 }
 

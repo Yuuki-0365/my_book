@@ -1,0 +1,162 @@
+*{
+    margin: 0;
+    padding: 0;
+}
+body{
+    background-image: url("../upload.jpg");
+}
+
+.main {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    min-width: 1000px;
+    min-height: 745px;
+}
+
+.content {
+    height: 100%;
+    float: left;
+    width: 100%;
+}
+
+.avatar {
+    position: absolute;
+    top: 7%;
+    bottom: 72%;
+    right: 77%;
+    left: 14%;
+    background-color: #00dd60;
+}
+
+.avatar_img {
+    width: 100%;
+    height: 100%;
+}
+
+.UploadAvatar {
+    position: absolute;
+    top: 24%;
+    bottom: 72%;
+    left: 24%;
+    right: 74%;
+}
+
+.UploadAvatar button {
+    width: 205%;
+}
+.user_name {
+    border: black 1px solid;
+    border-radius: 5px;
+    position: absolute;
+    top: 32%;
+    bottom : 64%;
+    right: 50%;
+    left: 12%;
+}
+
+.user_id{
+    border: black 1px solid;
+    border-radius: 5px;
+    position: absolute;
+    top: 40%;
+    bottom : 56%;
+    right: 50%;
+    left: 12%;
+}
+
+.introduction {
+    border: black 1px solid;
+    border-radius: 5px;
+    position: absolute;
+    top: 48%;
+    bottom: 48%;
+    right: 50%;
+    left: 12%;
+}
+
+.email {
+    border: black 1px solid;
+    border-radius: 5px;
+    position: absolute;
+    top:56%;
+    bottom: 40%;
+    right: 50%;
+    left: 12%;
+}
+
+.password {
+    border: black 1px solid;
+    border-radius: 5px;
+    position: absolute;
+    top:64%;
+    bottom: 32%;
+    right: 50%;
+    left: 12%;
+}
+
+.sex {
+    position: absolute;
+    top: 15%;
+    bottom: 80%;
+    left: 24%;
+    right: 74%;
+}
+
+.decorate {
+    position: absolute;
+    top: 20%;
+    bottom: 35%;
+    left: 70%;
+    right: 5%;
+}
+
+.Edit {
+    position: absolute;
+    left: 95%;
+}
+
+.decorate img {
+    width: 80%;
+}
+
+.user_name img {
+    width: 5%;
+    vertical-align: middle;
+}
+
+.user_id img {
+    width: 5%;
+    vertical-align: middle;
+}
+
+.introduction img {
+    width: 5%;
+    vertical-align: middle;
+}
+
+.email img {
+    width: 5%;
+    vertical-align: middle;
+}
+
+.password img {
+    width: 5%;
+    vertical-align: middle;
+}
+
+.sex img {
+    width: 100%;
+    vertical-align: middle;
+}
+
+.delete {
+    position: absolute;
+    top: 85%;
+    right: 30%;
+    bottom: 10%;
+    left: 65%;
+}

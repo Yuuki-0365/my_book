@@ -28,19 +28,26 @@ func NewRouter() *gin.Engine {
 			}
 			info := userNotAuthed.Group("/info")
 			{
-				info.GET("/all", controller.ShowUserInfoAll)
+				info.POST("/all", controller.ShowUserInfoAll)
+			}
+			admin := userNotAuthed.Group("/admin")
+			{
+				admin.POST("/info", controller.AdminShowInfo)
+				admin.POST("/info/update", controller.AdminUpdateInfo)
+				admin.POST("/info/delete", controller.AdminDeleteUser)
+				admin.POST("/info/add", controller.AdminAddUser)
 			}
 		}
 		search := v1.Group("/search")
 		{
-			search.GET("/user", controller.SearchUser)
-			search.GET("/note", controller.SearchNote)
+			search.POST("/user", controller.SearchUser)
+			search.POST("/note", controller.SearchNote)
 		}
 
 		note := v1.Group("/note")
 		{
-			note.GET("/info/less", controller.GetNoteInfoLess)
-			note.GET("/info/more", controller.GetNoteInfoMore)
+			note.POST("/info/less", controller.GetNoteInfoLess)
+			note.POST("/info/more", controller.GetNoteInfoMore)
 		}
 
 		authed := v1.Group("/authed")
@@ -55,17 +62,16 @@ func NewRouter() *gin.Engine {
 				}
 				info := user.Group("/info")
 				{
-					info.GET("/follower", controller.UserFollowers)
-					info.GET("/fan", controller.UserFans)
+					info.POST("/follower", controller.UserFollowers)
+					info.POST("/fan", controller.UserFans)
 					info.GET("/update", controller.ShowUserInfoInUpdate)
-
+					info.POST("/all", controller.ShowOwnUserInfoAll)
 				}
 				follow := user.Group("")
 				{
-					follow.GET("/followed", controller.UserFollowed)
+					follow.POST("/followed", controller.UserFollowed)
 					follow.POST("/follow", controller.UserFollow)
-					follow.DELETE("/unfollow", controller.UserUnFollow)
-					follow.GET("/follow/together", controller.FollowTogether)
+					follow.POST("/follow/together", controller.FollowTogether)
 				}
 				update := user.Group("/update")
 				{
@@ -75,25 +81,29 @@ func NewRouter() *gin.Engine {
 					update.POST("/password/password", controller.UserUpdatePasswordByPassword)
 					update.POST("/password/email", controller.UserUpdatePasswordByEmail)
 					update.POST("/info", controller.UserUpdateInfo)
+					update.POST("/info/all", controller.GetUserUpdateInfo)
+				}
+				user.POST("/delete", controller.DeleteUser)
+				note := user.Group("/note")
+				{
+					note.POST("/follow", controller.GetFollowUserNotes)
+				}
+				comment := user.Group("/comment")
+				{
+					comment.POST("/add/note", controller.AddCommentToNote)
+					comment.DELETE("/delete/note", controller.DeleteCommentToNote)
+					comment.POST("/add/comment", controller.AddCommentToComment)
+					comment.DELETE("/delete/comment", controller.DeleteCommentToComment)
+					comment.POST("/like", controller.LikeComment)
 				}
 			}
 			note := authed.Group("/note")
 			{
 				note.POST("/publish", controller.PublishNote)
 				note.POST("/like", controller.LikeNote)
-				note.DELETE("/unlike", controller.UnLikeNote)
 				note.POST("/favorite", controller.FavoriteNote)
-				note.DELETE("/unfavorite", controller.UnFavoriteNote)
 				note.DELETE("/delete", controller.DeleteNote)
-				note.POST("/comment/add", controller.AddComment)
-				note.DELETE("/comment/delete", controller.DeleteComment)
 			}
-			//comment := authed.Group("/comment")
-			//
-			//{
-			//	comment.POST("/like", controller.LikeCommment)
-			//	comment.POST("/unlike", controller.UnLikeComment)
-			//}
 		}
 	}
 	return r

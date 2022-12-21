@@ -33,7 +33,7 @@ type UserInfoAll struct {
 func BuildListResponse(item interface{}, total uint) Response {
 	return Response{
 		Status: 200,
-		Msg:    "oK",
+		Msg:    "ok",
 		Data: DataList{
 			Item:  item,
 			Total: total,

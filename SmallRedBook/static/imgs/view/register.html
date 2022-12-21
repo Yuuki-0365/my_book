@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>register</title>
+  <link rel="stylesheet" type="text/css" href="css/loginAndRegister.css"/>
+  <script>
+    window.onload = function () {
+      document.getElementById("loginByEmail").onclick = function() {
+        window.location = "./loginByEmail.html";
+      }
+      document.getElementById("loginByUserId").onclick = function() {
+        window.location = "./loginByUserId.html";
+      }
+    }
+    function GetCode() {
+      document.getElementById("get_code").onclick=null;
+      let xhttp = new XMLHttpRequest();
+      let email = document.getElementById('email').value;
+      if (email == "") {
+        return;
+      }
+      let formData = new FormData();
+      formData.append(`email`, email);
+      xhttp.open("POST", "http://localhost:3000/api/user/register/code", true);
+      xhttp.send(formData)
+      xhttp.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+          var data = JSON.parse(this.responseText);
+          if (data.msg!="ok") {
+            alert(data.msg);
+            return
+          } else {
+            let time = 60;
+            let timer = setInterval(function () {
+              time--;
+              if (time > 0) {
+                document.getElementById("get_code").onclick = null;
+                document.getElementById("get_code").innerHTML = "重新获取" + time + "s";
+              } else {
+                document.getElementById("get_code").onclick = GetCode;
+                clearInterval(timer)
+                document.getElementById("get_code").innerHTML = "获取验证码";
+              }
+            }, 1000);
+          }
+        }
+      }
+    }
+    function Send() {
+      let name = document.getElementById("name").value;
+      let password = document.getElementById("password").value;;
+      let email = document.getElementById("email").value;
+      let code = document.getElementById("code").value;
+      let repassword = document.getElementById("re_password").value;
+      // let file = document.getElementById("file").value
+      if (name == "") {
+        document.getElementById("name").focus();
+        return
+      }
+      if (password == "") {
+        document.getElementById("password").focus();
+        return
+      }
+      if (repassword == "") {
+        document.getElementById("re_password").focus();
+        return
+      }
+      if (email == "") {
+        document.getElementById("email").focus();
+        return
+      }
+      if (code == "") {
+        document.getElementById("code").focus();
+        return
+      }
+      if (repassword !== password) {
+        document.getElementById("re_password").focus();
+        return
+      }
+      // if(file===""){
+      //     alert("未设置头像");
+      //     return
+      // }
+      var xhttp = new XMLHttpRequest();
+      var formData = new FormData();
+      formData.append("user_name", name);
+      formData.append("email", email);
+      formData.append("password", password);
+      formData.append("code", code);
+      // formData.append("file", document.getElementById("file").files[0])
+      xhttp.open("POST", "http://localhost:3000/api/user/register", true);
+      xhttp.send(formData)
+      xhttp.onreadystatechange = function () {
+        if (this.readyState == 4 && this.status == 200) {
+          var data = JSON.parse(this.responseText);
+          if (data.msg != "ok") {
+            alert(data.msg);
+            return
+          } else {
+            alert("注册成功");
+          }
+        }
+      }
+    }
+  </script>
+</head>
+<body>
+<div class="control">
+  <div class="item">
+    <div id="loginByEmail">邮箱登录</div><div id="loginByUserId">账号登录</div><div class="active">注册</div>
+  </div>
+  <div class="content">
+    <div style="display: block;">
+      <div class="input">
+        <br>
+        <div class="input_button">
+          <img src="./icon/用户名.png">
+          <input style="border: none" type="text" placeholder="请输入用户名" id="name"/>
+        </div>
+      </div>
+      <div class="input">
+        <br>
+        <div class="input_button">
+          <img src="./icon/密码.png">
+          <input style="border: none" type="password" placeholder="请输入密码" id="password"/>
+        </div>
+      </div>
+      <div class="input">
+        <br>
+        <div class="input_button">
+          <img src="./icon/密码.png">
+          <input style="border: none" type="password" placeholder="请再次输入密码" id="re_password"/>
+        </div>
+      </div>
+      <div class="input">
+        <br>
+        <div class="code">
+          <img src="./icon/邮箱.png">
+          <input style="border: none" type="text" id="email" placeholder="请输入邮箱">
+          <button style="color: DodgerBlue" type="button" id="get_code" onclick="GetCode()">获取验证码</button>
+        </div>
+      </div>
+      <div class="input">
+        <br>
+        <div class="input_button">
+          <img src="./icon/验证码.png">
+          <input style="border: none" type="text" placeholder="请输入验证码" id="code"/>
+        </div>
+      </div>
+      <div class="input">
+        <input type="submit" value="注册" onclick="Send()"/>
+      </div>
+    </div>
+  </div>
+</div>
+<img src="地球.png" id="earth">
+</body>
+</html>
+
+

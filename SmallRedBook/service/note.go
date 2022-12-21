@@ -29,9 +29,6 @@ func (service *NoteService) PublishNote(ctx context.Context, userId string, file
 		e.ThrowError(e.ErrorDataBase)
 	}
 
-	if err != nil {
-		e.ThrowError(e.UploadNoteFileToLocalStaticError)
-	}
 	noteId := strconv.Itoa(int(count + 1))
 
 	note := &model.Note{
@@ -44,7 +41,7 @@ func (service *NoteService) PublishNote(ctx context.Context, userId string, file
 		LikeCount:     0,
 		FavoriteCount: 0,
 		CommentCount:  0,
-		Id:            count + 1,
+		NoteId:        count + 1,
 	}
 	err = publishNoteDao.CreateNote(note)
 	if err != nil {
@@ -68,7 +65,7 @@ func (service *NoteService) PublishNote(ctx context.Context, userId string, file
 
 func (service *NoteService) GetNotesInfoLess(ctx context.Context) tool.Response {
 	getNoteInfoLessDao := dao.NewNoteDao(ctx)
-	notesInfoLess, err := getNoteInfoLessDao.GetNotesInfoLess(service.PageNumber, service.PageSize)
+	notesInfoLess, err := getNoteInfoLessDao.GetNotesInfoLess()
 
 	if err != nil {
 		return e.ThrowError(e.ErrorDataBase)

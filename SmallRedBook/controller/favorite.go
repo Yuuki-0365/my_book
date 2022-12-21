@@ -18,15 +18,3 @@ func FavoriteNote(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, ErrorResponse(err))
 	}
 }
-
-func UnFavoriteNote(c *gin.Context) {
-	var unFavoriteNoteService service.FavoriteService
-
-	claims, _ := tool.ParseToken(c.GetHeader("Authorization"))
-	if err := c.ShouldBind(&unFavoriteNoteService); err == nil {
-		res := unFavoriteNoteService.UnFavoriteNote(c.Request.Context(), claims.UserId)
-		c.JSON(http.StatusOK, res)
-	} else {
-		c.JSON(http.StatusBadRequest, ErrorResponse(err))
-	}
-}

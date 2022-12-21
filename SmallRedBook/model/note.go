@@ -3,7 +3,7 @@ package model
 type Note struct {
 	CreatedAt     string     `json:"created_at"`
 	UpdatedAt     string     `json:"updated_at"`
-	Id            int64      `json:"id" gorm:"column:id;primary_key;AUTO_INCREMENT"`
+	NoteId        int64      `json:"note_id" gorm:"column:note_id;primary_key;AUTO_INCREMENT"`
 	UserId        string     `json:"user_id"`
 	Content       string     `json:"content"`
 	Title         string     `json:"title"`
@@ -12,6 +12,5 @@ type Note struct {
 	LikeCount     int64      `json:"like_count"`
 	Favorites     []Favorite `json:"favorites" gorm:"foreignKey:note_id"`
 	FavoriteCount int64      `json:"favorite_count"`
-	Comments      []Comment  `json:"comments" gorm:"foreignKey:note_id"`
 	CommentCount  int64      `json:"comment_count"`
 }

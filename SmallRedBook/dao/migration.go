@@ -11,11 +11,11 @@ func migration() {
 			&model.User{},
 			&model.Notice{},
 			&model.Follow{},
-			&model.Fan{},
 			&model.Favorite{},
 			&model.Like{},
+			&model.Note{},
 			&model.Comment{},
-			&model.Note{})
+			&model.CommentLike{})
 	if err != nil {
 		fmt.Println("err=", err)
 		return

@@ -21,6 +21,11 @@ func NewNoteDaoByDb(db *gorm.DB) *NoteDao {
 func (dao *NoteDao) Count() (count int64, err error) {
 	err = dao.DB.Model(&model.Note{}).
 		Count(&count).Error
+	if count == 0 {
+		return
+	} else {
+		err = dao.DB.Table("note").Select("MAX(note_id)").Find(&count).Error
+	}
 	return
 }
 
@@ -43,12 +48,11 @@ func (dao *NoteDao) CreateNote(note *model.Note) (err error) {
 	return
 }
 
-func (dao *NoteDao) GetNotesInfoLess(pageNum int, pageSize int) (notesInfoLess []map[string]interface{}, err error) {
+func (dao *NoteDao) GetNotesInfoLess() (notesInfoLess []map[string]interface{}, err error) {
 	err = dao.DB.Table("user, note").
-		Select("user.user_name, user.avatar, user.user_id, note.title, note.like_count, note.file_path").
+		Select("note.note_id, user.user_name, user.avatar, user.user_id, note.title, note.like_count, note.file_path, note.comment_count").
 		Where("user.user_id=note.user_id").
-		Offset((pageNum - 1) * (pageSize)).
-		Limit(pageSize).
+		Order("note.created_at desc").
 		Find(&notesInfoLess).Error
 	return
 }
@@ -56,7 +60,7 @@ func (dao *NoteDao) GetNotesInfoLess(pageNum int, pageSize int) (notesInfoLess [
 func (dao *NoteDao) DeleteNote(userId string, noteId int64) (err error) {
 	tx := dao.DB
 	tx.Begin()
-	err = tx.Where("user_id=? and id=?", userId, noteId).
+	err = tx.Where("user_id=? and note_id=?", userId, noteId).
 		Delete(&model.Note{}).
 		Error
 	if err != nil {
@@ -86,16 +90,17 @@ func (dao *NoteDao) SearchNote(pageNum int, pageSize int, title string) (notes [
 
 func (dao *NoteDao) GetNotesInfoMore(noteId int64) (noteInfo []map[string]interface{}, err error) {
 	err = dao.DB.Table("note").
-		Select("file_path, title, content, like_count, favorite_count, comment_count").
-		Where("note.id = ?", noteId).
+		Select("*").
+		Where("note.note_id = ?", noteId).
 		Find(&noteInfo).Error
 	return
 }
 
 func (dao *NoteDao) GetNotesByUserId(userId string) (noteInfo []map[string]interface{}, err error) {
 	err = dao.DB.Table("user, note").
-		Select("user.user_name, user.avatar, note.title, note.like_count, note.file_path").
+		Select("user.user_name, user.avatar, note.title, note.like_count, note.file_path, note.comment_count, note.note_id").
 		Where("user.user_id = ? and user.user_id=note.user_id", userId).
+		Order("note.created_at desc").
 		Find(&noteInfo).Error
 	return
 }
@@ -106,8 +111,9 @@ func (dao *NoteDao) GetLikeNotes(userId string) (noteInfo []map[string]interface
 		Where("user_id=?", userId)
 
 	err = dao.DB.Table("user, note").
-		Select("user.user_name, user.avatar, note.title, note.like_count, note.file_path").
-		Where("note.id in(?) and user.user_id = note.user_id", tmp).
+		Select("user.user_name, user.avatar, note.title, note.like_count, note.file_path, note.comment_count, note.note_id").
+		Where("note.note_id in(?) and user.user_id = note.user_id", tmp).
+		Order("note.created_at desc").
 		Find(&noteInfo).Error
 	return
 }
@@ -118,8 +124,9 @@ func (dao *NoteDao) GetFavoriteNotes(userId string) (noteInfo []map[string]inter
 		Where("user_id=?", userId)
 
 	err = dao.DB.Table("user, note").
-		Select("user.user_name, user.avatar, note.title, note.like_count, note.file_path").
-		Where("note.id in(?) and user.user_id = note.user_id", tmp).
+		Select("user.user_name, user.avatar, note.title, note.like_count, note.file_path, note.comment_count, note.note_id").
+		Where("note.note_id in(?) and user.user_id = note.user_id", tmp).
+		Order("note.created_at desc").
 		Find(&noteInfo).Error
 	return
 }

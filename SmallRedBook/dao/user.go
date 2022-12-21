@@ -4,7 +4,6 @@ import (
 	"SmallRedBook/model"
 	"context"
 	"gorm.io/gorm"
-	"time"
 )
 
 type UserDao struct {
@@ -92,7 +91,7 @@ func (dao *UserDao) GetFansCount(userId string) (count int64, err error) {
 func (dao *UserDao) GetFollowersById(userId string) (count int64, user []*model.User, err error) {
 	tmp := dao.DB.Table("follow").
 		Select("followed_user_id").
-		Where("user_id = ?", userId)
+		Where("user_id = ? and is_followed = ?", userId, true)
 	err = dao.DB.Table("user").
 		Select("*").
 		Where("user_id in (?)", tmp).
@@ -102,9 +101,9 @@ func (dao *UserDao) GetFollowersById(userId string) (count int64, user []*model.
 }
 
 func (dao *UserDao) GetFansById(userId string) (count int64, user []*model.User, err error) {
-	tmp := dao.DB.Table("fan").
-		Select("follower_user_id").
-		Where("user_id = ?", userId)
+	tmp := dao.DB.Table("follow").
+		Select("user_id").
+		Where("followed_user_id = ? and is_followed = ?", userId, true)
 
 	err = dao.DB.Table("user").
 		Select("*").
@@ -128,53 +127,33 @@ func (dao *UserDao) GetUserInfoInUpdate(userId string) (user *model.User, err er
 		First(&user).Error
 	return
 }
-
-func (dao *UserDao) UserFollowed(userId string, followedId string) (count int64, err error) {
+func (dao *UserDao) UserFollowed(userId string, followedId string) (follow *model.Follow, count int64, err error) {
 	err = dao.DB.Table("follow").
 		Where("user_id = ? and followed_user_id = ?", userId, followedId).
+		Find(&follow).
 		Count(&count).Error
 	return
 }
 
-func (dao *UserDao) UserFollow(userId string, followId string) (err error) {
+func (dao *UserDao) CreateFollow(follow *model.Follow) (err error) {
 	tx := dao.DB
 	tx.Begin()
-	follow := model.Follow{
-		CreatedAt:      time.Now().Format("2006-01-02 15:04:05"),
-		UpdatedAt:      time.Now().Format("2006-01-02 15:04:05"),
-		UserId:         userId,
-		FollowedUserId: followId,
-		Status:         1,
-	}
-	err = tx.Create(&follow).Error
+	err = tx.Model(&model.Follow{}).
+		Create(&follow).Error
 	if err != nil {
 		tx.Rollback()
 		return
 	}
-
-	fan := model.Fan{
-		CreatedAt:      time.Now().Format("2006-01-02 15:04:05"),
-		UpdatedAt:      time.Now().Format("2006-01-02 15:04:05"),
-		UserId:         followId,
-		FollowerUserId: userId,
-		Status:         1,
-	}
-	err = tx.Create(&fan).Error
+	err = tx.Model(&model.User{}).
+		Where("user_id=?", follow.UserId).
+		Update("follow_count", gorm.Expr("follow_count+1")).Error
 	if err != nil {
 		tx.Rollback()
 		return
 	}
-
-	err = tx.Table("user").
-		Where("user_id=?", userId).
-		Update("follow_count", gorm.Expr("follow_count+?", 1)).Error
-	if err != nil {
-		tx.Rollback()
-		return
-	}
-	err = tx.Table("user").
-		Where("user_id=?", followId).
-		Update("fan_count", gorm.Expr("fan_count+?", 1)).Error
+	err = tx.Model(&model.User{}).
+		Where("user_id=?", follow.FollowedUserId).
+		Update("fan_count", gorm.Expr("fan_count+1")).Error
 	if err != nil {
 		tx.Rollback()
 		return
@@ -183,36 +162,58 @@ func (dao *UserDao) UserFollow(userId string, followId string) (err error) {
 	return
 }
 
-func (dao *UserDao) UserUnFollow(userId string, unFollowId string) (err error) {
+func (dao *UserDao) Follow(userId string, followId string) (err error) {
 	tx := dao.DB
 	tx.Begin()
-	err = tx.Where("user_id=?", userId).
-		Delete(&model.Follow{}).Error
+	err = tx.Model(&model.Follow{}).
+		Where("user_id = ? and followed_user_id = ?", userId, followId).
+		Update("is_followed", true).Error
 	if err != nil {
 		tx.Rollback()
 		return
 	}
-	err = tx.Where("user_id=?", unFollowId).
-		Delete(&model.Fan{}).Error
+	err = tx.Model(&model.User{}).
+		Where("user_id=?", userId).
+		Update("follow_count", gorm.Expr("follow_count+1")).Error
 	if err != nil {
 		tx.Rollback()
 		return
 	}
-	err = tx.Table("user").
+	err = tx.Model(&model.User{}).
+		Where("user_id=?", followId).
+		Update("fan_count", gorm.Expr("fan_count+1")).Error
+	if err != nil {
+		tx.Rollback()
+		return
+	}
+	tx.Commit()
+	return
+}
+
+func (dao *UserDao) UnFollow(userId string, followId string) (err error) {
+	tx := dao.DB
+	tx.Begin()
+	err = tx.Model(&model.Follow{}).
+		Where("user_id = ? and followed_user_id = ?", userId, followId).
+		Update("is_followed", false).Error
+	if err != nil {
+		tx.Rollback()
+		return
+	}
+	err = tx.Model(&model.User{}).
 		Where("user_id=?", userId).
 		Update("follow_count", gorm.Expr("follow_count-1")).Error
 	if err != nil {
 		tx.Rollback()
 		return
 	}
-	err = tx.Table("user").
-		Where("user_id=?", unFollowId).
+	err = tx.Model(&model.User{}).
+		Where("user_id=?", followId).
 		Update("fan_count", gorm.Expr("fan_count-1")).Error
 	if err != nil {
 		tx.Rollback()
 		return
 	}
-	tx.Commit()
 	return
 }
 
@@ -248,8 +249,63 @@ func (dao *UserDao) SearchUser(userName string) (users []*model.User, count int6
 
 func (dao *UserDao) ShowUserInfoAll(userId string) (user map[string]interface{}, err error) {
 	err = dao.DB.Table("user").
-		Select("user_id, user_name, avatar, introduction, follow_count, fan_count, note_count").
+		Select("user_id, user_name, sex, avatar, introduction, follow_count, fan_count, note_count").
 		Where("user_id=?", userId).
 		Find(&user).Error
+	return
+}
+
+func (dao *UserDao) ShowOwnUserInfoAll(userId string) (user map[string]interface{}, err error) {
+	err = dao.DB.Table("user").
+		Select("*").
+		Where("user_id=?", userId).
+		Find(&user).Error
+	return
+}
+
+func (dao *UserDao) GetUpdateInfo(userId string) (user map[string]interface{}, err error) {
+	err = dao.DB.Table("user").
+		Select("avatar, user_name, user_id, introduction, sex, email, password").
+		Where("user_id=?", userId).
+		Find(&user).Error
+	return
+}
+
+func (dao *UserDao) DeleteUser(userId string) (err error) {
+	err = dao.DB.Where("user_id=?", userId).
+		Delete(&model.User{}).Error
+	return
+}
+
+func (dao *UserDao) AdminShowInfo() (user []map[string]interface{}, err error) {
+	err = dao.DB.Table("user").
+		Select("created_at, updated_at, user_id, user_name, email, password, introduction, sex").
+		Find(&user).Error
+	return
+}
+
+func (dao *UserDao) AdminUpdateInfo(user *model.User, userId string) (err error) {
+	err = dao.DB.Model(&model.User{}).
+		Where("user_id=?", userId).
+		Updates(user).Error
+	return
+}
+
+func (dao *UserDao) AdminDeleteInfo(userId string) (err error) {
+	err = dao.DB.Where("user_id=?", userId).
+		Delete(&model.User{}).Error
+	return
+}
+
+func (dao *UserDao) GetFollowUserNotes(userId string) (notes []map[string]interface{}, count int64, err error) {
+	tmp := dao.DB.Table("follow").
+		Select("followed_user_id").
+		Where("user_id=?", userId)
+	err = dao.DB.Table("note, user").
+		Select("note.*, user.avatar, user.user_name").
+		Where("note.user_id in(?) and note.user_id = user.user_id", tmp).
+		Order("note.created_at desc").
+		Find(&notes).
+		Count(&count).Error
 	return
 }

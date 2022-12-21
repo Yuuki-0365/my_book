@@ -3,6 +3,7 @@ package controller
 import (
 	"SmallRedBook/service"
 	"SmallRedBook/tool"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"net/http"
 )
@@ -11,7 +12,6 @@ func PublishNote(c *gin.Context) {
 	// 多个
 	form, _ := c.MultipartForm()
 	files := form.File["file"]
-
 	var publishNoteService service.NoteService
 	claims, _ := tool.ParseToken(c.GetHeader("Authorization"))
 	if err := c.ShouldBind(&publishNoteService); err == nil {
@@ -56,11 +56,11 @@ func SearchNote(c *gin.Context) {
 
 func GetNoteInfoMore(c *gin.Context) {
 	var getNoteInfoMore service.NoteService
-
 	if err := c.ShouldBind(&getNoteInfoMore); err == nil {
 		res := getNoteInfoMore.GetNotesInfoMore(c.Request.Context())
 		c.JSON(http.StatusOK, res)
 	} else {
+		fmt.Println(err)
 		c.JSON(http.StatusBadRequest, ErrorResponse(err))
 	}
 }

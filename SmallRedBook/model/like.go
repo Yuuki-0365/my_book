@@ -5,4 +5,5 @@ type Like struct {
 	UpdateAt string `json:"update_at"`
 	UserId   string `json:"user_id"`
 	NoteId   uint   `json:"note_id"`
+	IsLiked  bool   `json:"is_liked"`
 }

@@ -10,9 +10,11 @@ import (
 	"SmallRedBook/tool/e"
 	"SmallRedBook/tool/snowflake"
 	"context"
+	"fmt"
 	"github.com/gomodule/redigo/redis"
 	"gopkg.in/mail.v2"
 	"mime/multipart"
+	"os"
 	"strconv"
 	"time"
 )
@@ -50,7 +52,7 @@ func (service *UserService) GetRegisterCode(ctx context.Context) tool.Response {
 	Vcode := tool.GenerateVcode()
 	conn := cache.RedisPool.Get()
 	defer conn.Close()
-	conn.Do("SET", cache.UserRegisterCode+service.Email, Vcode, "EX", 120)
+	conn.Do("SET", cache.UserRegisterCode+service.Email, Vcode, "EX", 60)
 
 	mailStr := notice.Text
 	mailText := mailStr + Vcode
@@ -91,7 +93,7 @@ func (service *UserService) GetLoginCode(ctx context.Context) tool.Response {
 	Vcode := tool.GenerateVcode()
 	conn := cache.RedisPool.Get()
 	defer conn.Close()
-	conn.Do("SET", cache.UserLoginCode+service.Email, Vcode, "EX", 120)
+	conn.Do("SET", cache.UserLoginCode+service.Email, Vcode, "EX", 60)
 	mailStr := notice.Text
 	mailText := mailStr + Vcode
 	m := mail.NewMessage()
@@ -104,13 +106,22 @@ func (service *UserService) GetLoginCode(ctx context.Context) tool.Response {
 	d := mail.NewDialer(conf.SmtpHost, 465, conf.SmtpEmail, conf.SmtpPass)
 	d.StartTLSPolicy = mail.MandatoryStartTLS
 	if err = d.DialAndSend(m); err != nil {
+		fmt.Println(err)
 		return e.ThrowError(e.ErrorSendEmail)
 	}
 
 	return e.ThrowSuccess()
 }
 
-func (service *UserService) Register(ctx context.Context, file multipart.File) tool.Response {
+func (service *UserService) Register(ctx context.Context) tool.Response {
+	userDao := dao.NewUserDao(ctx)
+	exist, err := userDao.ExistEmailOrNot(service.Email)
+	if err != nil {
+		return e.ThrowError(e.ErrorDataBase)
+	}
+	if exist {
+		return e.ThrowError(e.ExistEmail)
+	}
 
 	// 判断密码长度
 	if len(service.Password) < 8 {
@@ -132,7 +143,9 @@ func (service *UserService) Register(ctx context.Context, file multipart.File) t
 	// 生成唯一ID
 	snowflake.SetMachineId(12)
 	userId := strconv.Itoa(int(snowflake.GetId()))
-	path, err := UploadAvatarToLocalStatic(file, userId, service.UserName)
+	file, _ := os.OpenFile("C:\\Users\\15314\\GolandProjects\\SmallRedBook\\static\\imgs\\avatar\\avatar.png", os.O_RDONLY, 0755)
+	avatar := (multipart.File)(file)
+	path, err := UploadAvatarToLocalStatic(avatar, userId, service.UserName)
 	if err != nil {
 		return e.ThrowError(e.UploadAvatarToLocalStaticError)
 	}
@@ -151,10 +164,29 @@ func (service *UserService) Register(ctx context.Context, file multipart.File) t
 	}
 
 	// 插入数据
-	userDao := dao.NewUserDao(ctx)
 	err = userDao.CreateUser(user)
 	if err != nil {
 		return e.ThrowError(e.ErrorDataBase)
+	}
+
+	noticeDao := dao.NewNoticeDaoByDb(userDao.DB)
+	notice, err := noticeDao.GetNoticeById(4)
+	if err != nil {
+		return e.ThrowError(e.ErrorDataBase)
+	}
+	mailStr := notice.Text
+	mailText := mailStr + userId
+	m := mail.NewMessage()
+	m.SetHeader("From", conf.SmtpEmail)
+	m.SetHeader("To", service.Email)
+	m.SetHeader("Subject", "SmallRedBook")
+	m.SetBody("text/html", mailText)
+
+	// 发送
+	d := mail.NewDialer(conf.SmtpHost, 465, conf.SmtpEmail, conf.SmtpPass)
+	d.StartTLSPolicy = mail.MandatoryStartTLS
+	if err = d.DialAndSend(m); err != nil {
+		return e.ThrowError(e.ErrorSendEmail)
 	}
 
 	return tool.BuildListResponse(serializer.BuildUser(user), 1)
@@ -282,100 +314,101 @@ func (service *UserService) GetFans(ctx context.Context, userId string) tool.Res
 }
 
 func (service *UserService) UserFollowed(ctx context.Context, userId string, followId string) tool.Response {
-	code := e.Success
-
 	userFollowedDao := dao.NewUserDao(ctx)
-	count, err := userFollowedDao.UserFollowed(userId, followId)
+	Follow, count, err := userFollowedDao.UserFollowed(userId, followId)
 	if err != nil {
 		return e.ThrowError(e.ErrorDataBase)
 	}
-	if count != 0 {
-		code = e.HasFollowed
+	if count == 0 {
 		return tool.Response{
-			Status: code,
-			Msg:    userId + " " + e.GetMsg(code) + " " + followId,
-		}
-	} else {
-		code = e.NotFollow
-		return tool.Response{
-			Status: code,
-			Msg:    userId + " " + e.GetMsg(code) + " " + followId,
+			Status: e.Success,
+			Msg:    e.GetMsg(e.NotFollow),
 		}
 	}
+	if count == 1 {
+		if Follow.IsFollowed == false {
+			return tool.Response{
+				Status: e.Success,
+				Msg:    e.GetMsg(e.NotFollow),
+			}
+		} else {
+			return tool.Response{
+				Status: e.Success,
+				Msg:    e.GetMsg(e.Follow),
+			}
+		}
+	}
+	return e.ThrowError(e.Error)
 }
 
 func (service *UserService) UserFollow(ctx context.Context, userId string, followId string) tool.Response {
-	code := e.Success
-
 	userFollowDao := dao.NewUserDao(ctx)
-	// 首先判断是否已经有了
-	count, err := userFollowDao.UserFollowed(userId, followId)
+	Follow, count, err := userFollowDao.UserFollowed(userId, followId)
 	if err != nil {
 		return e.ThrowError(e.ErrorDataBase)
 	}
-
-	// 有了
-	if count != 0 {
-		code = e.HasFollowed
+	if count == 0 {
+		follow := &model.Follow{
+			CreatedAt:      time.Now().Format("2006-01-02 15:04:05"),
+			UpdatedAt:      time.Now().Format("2006-01-02 15:04:05"),
+			UserId:         userId,
+			FollowedUserId: followId,
+			IsFollowed:     true,
+		}
+		err = userFollowDao.CreateFollow(follow)
+		if err != nil {
+			return e.ThrowError(e.ErrorDataBase)
+		}
 		return tool.Response{
-			Status: code,
-			Msg:    userId + " " + e.GetMsg(code) + " " + followId,
+			Status: e.Success,
+			Msg:    e.GetMsg(e.HasNotFollowed),
 		}
 	}
+	if count == 1 {
+		if Follow.IsFollowed == true {
+			err = userFollowDao.UnFollow(userId, followId)
 
-	// 没有
-	err = userFollowDao.UserFollow(userId, followId)
-	if err != nil {
-		return e.ThrowError(e.ErrorDataBase)
-	}
-	return e.ThrowSuccess()
-}
+			if err != nil {
+				return e.ThrowError(e.ErrorDataBase)
+			}
+			return tool.Response{
+				Status: e.Success,
+				Msg:    e.GetMsg(e.HasFollowed),
+			}
+		} else {
+			err = userFollowDao.Follow(userId, followId)
 
-func (service *UserService) UserUnFollow(ctx context.Context, userId string, unFollowId string) tool.Response {
-	code := e.Success
-
-	userFollowDao := dao.NewUserDao(ctx)
-
-	count, err := userFollowDao.UserFollowed(userId, unFollowId)
-	if err != nil {
-		return e.ThrowError(e.ErrorDataBase)
-	}
-	if count == 0 {
-		code = e.NotFollow
-		return tool.Response{
-			Status: code,
-			Msg:    userId + " " + e.GetMsg(code) + " " + unFollowId,
+			if err != nil {
+				return e.ThrowError(e.ErrorDataBase)
+			}
+			return tool.Response{
+				Status: e.Success,
+				Msg:    e.GetMsg(e.HasNotFollowed),
+			}
 		}
 	}
-
-	// 取关首先要关注了
-	err = userFollowDao.UserUnFollow(userId, unFollowId)
-	if err != nil {
-		return e.ThrowError(e.ErrorDataBase)
-	}
-
-	return e.ThrowSuccess()
+	return e.ThrowError(e.Error)
 }
 
-func (service *UserService) UserFollowTogether(ctx context.Context, userId string, userFollowId string) tool.Response {
-	userFollowTogetherDao := dao.NewUserDao(ctx)
-	count, err := userFollowTogetherDao.UserFollowed(userId, userFollowId)
+func (service *UserService) FollowTogether(ctx context.Context, userId string) tool.Response {
+	followTogetherDao := dao.NewUserDao(ctx)
+	_, count, err := followTogetherDao.UserFollowed(userId, service.UserId)
 	if err != nil {
 		return e.ThrowError(e.ErrorDataBase)
 	}
 	if count == 0 {
-		return e.ThrowError(e.NotFollow)
+		return e.ThrowError(e.NotFollowTogether)
+	} else {
+		_, count, err = followTogetherDao.UserFollowed(service.UserId, userId)
+		if err != nil {
+			return e.ThrowError(e.ErrorDataBase)
+		}
+		if count == 0 {
+			return e.ThrowError(e.NotFollowTogether)
+		} else {
+			return e.ThrowError(e.FollowTogether)
+		}
 	}
-
-	count, err = userFollowTogetherDao.UserFollowed(userFollowId, userId)
-	if err != nil {
-		return e.ThrowError(e.ErrorDataBase)
-	}
-	if count == 0 {
-		return e.ThrowError(e.NotFollow)
-	}
-
-	return e.ThrowSuccess()
 }
 
 func (service *UserService) GetUpdateCode(ctx context.Context) tool.Response {
@@ -547,13 +580,21 @@ func (service *UserService) UpdateInfo(ctx context.Context, userId string) tool.
 		return e.ThrowError(e.ErrorDataBase)
 	}
 	if service.UserName != "" {
+		os.Rename("C:\\Users\\15314\\GolandProjects\\SmallRedBook\\static\\imgs\\avatar\\user"+userId+"\\"+user.UserName+".jpg", "C:\\Users\\15314\\GolandProjects\\SmallRedBook\\static\\imgs\\avatar\\user"+userId+"\\"+service.UserName+".jpg")
 		user.UserName = service.UserName
+		user.Avatar = "user" + userId + "/" + user.UserName + ".jpg"
 	}
 	if service.Introduction != "" {
 		user.Introduction = service.Introduction
 	}
 	if service.Sex != "" {
 		user.Sex = service.Sex
+	}
+	if service.Email != "" {
+		user.Email = service.Email
+	}
+	if service.Password != "" {
+		user.Password = tool.Encrypt.AesEncoding(service.Password)
 	}
 	user.UpdatedAt = time.Now().Format("2006-01-02 15:04:05")
 	err = updateInfoDao.UpdateInfo(userId, user)
@@ -570,6 +611,7 @@ func (service *UserService) UpdateInfoIncludeAvatar(ctx context.Context, userId 
 	if err != nil {
 		return e.ThrowError(e.ErrorDataBase)
 	}
+	os.RemoveAll("C:\\Users\\15314\\GolandProjects\\SmallRedBook\\static\\imgs\\avatar\\user" + userId + "\\" + user.UserName + ".jpg")
 	if service.UserName != "" {
 		user.UserName = service.UserName
 	}
@@ -578,6 +620,9 @@ func (service *UserService) UpdateInfoIncludeAvatar(ctx context.Context, userId 
 	}
 	if service.Sex != "" {
 		user.Sex = service.Sex
+	}
+	if service.Password != "" {
+		user.Password = tool.Encrypt.AesEncoding(service.Password)
 	}
 	path, err := UploadAvatarToLocalStatic(file, user.UserId, user.UserName)
 	if err != nil {
@@ -601,48 +646,106 @@ func (service *UserService) ShowUserInfoInUpdate(ctx context.Context, userId str
 	return tool.BuildListResponse(serializer.BuildUserInfoInUpdate(user), 1)
 }
 
-func (service *UserService) ShowUserInfoAll(ctx context.Context) tool.Response {
+func (service *UserService) ShowUserInfoAll(ctx context.Context, userId string) tool.Response {
 	showUserInfoAllDao := dao.NewUserDao(ctx)
-	userInfo, err := showUserInfoAllDao.ShowUserInfoAll(service.UserId)
+	userInfo, err := showUserInfoAllDao.ShowUserInfoAll(userId)
 	if err != nil {
 		return e.ThrowError(e.ErrorDataBase)
 	}
 	userInfo["avatar"] = conf.Host + conf.HttpPort + conf.AvatarPath + userInfo["avatar"].(string)
 
 	getNoteInfoLessDao := dao.NewNoteDaoByDb(showUserInfoAllDao.DB)
-	noteInfo, err := getNoteInfoLessDao.GetNotesByUserId(service.UserId)
+	noteInfo, err := getNoteInfoLessDao.GetNotesByUserId(userId)
 	if err != nil {
 		return e.ThrowError(e.ErrorDataBase)
 	}
 
 	getLikeNoteInfoDao := dao.NewNoteDaoByDb(getNoteInfoLessDao.DB)
-	likeNotesInfo, err := getLikeNoteInfoDao.GetLikeNotes(service.UserId)
+	likeNotesInfo, err := getLikeNoteInfoDao.GetLikeNotes(userId)
 	if err != nil {
 		return e.ThrowError(e.ErrorDataBase)
 	}
 
 	getFavoriteNoteInfoDao := dao.NewNoteDaoByDb(getLikeNoteInfoDao.DB)
-	favoriteNotesInfo, err := getFavoriteNoteInfoDao.GetFavoriteNotes(service.UserId)
+	favoriteNotesInfo, err := getFavoriteNoteInfoDao.GetFavoriteNotes(userId)
 	if err != nil {
 		return e.ThrowError(e.ErrorDataBase)
 	}
 
 	for _, item := range noteInfo {
-		files, _ := GetAllFile("." + item["file_path"].(string))
-		var v1 interface{} = files
+		path := item["file_path"].(string)
+		file := conf.Host + conf.HttpPort + path + "0.jpg"
+		var v1 interface{} = file
 		item["file_path"] = v1
+		item["avatar"] = conf.Host + conf.HttpPort + conf.AvatarPath + item["avatar"].(string)
 	}
 
 	for _, item := range likeNotesInfo {
-		files, _ := GetAllFile("." + item["file_path"].(string))
-		var v1 interface{} = files
+		path := item["file_path"].(string)
+		file := conf.Host + conf.HttpPort + path + "0.jpg"
+		var v1 interface{} = file
 		item["file_path"] = v1
+		item["avatar"] = conf.Host + conf.HttpPort + conf.AvatarPath + item["avatar"].(string)
 	}
 
 	for _, item := range favoriteNotesInfo {
-		files, _ := GetAllFile("." + item["file_path"].(string))
-		var v1 interface{} = files
+		path := item["file_path"].(string)
+		file := conf.Host + conf.HttpPort + path + "0.jpg"
+		var v1 interface{} = file
 		item["file_path"] = v1
+		item["avatar"] = conf.Host + conf.HttpPort + conf.AvatarPath + item["avatar"].(string)
+	}
+	return tool.BuildUserInfoAll(userInfo, noteInfo, likeNotesInfo, favoriteNotesInfo)
+}
+
+func (service *UserService) ShowOwnUserInfoAll(ctx context.Context, userId string) tool.Response {
+	showOwnUserInfoAllDao := dao.NewUserDao(ctx)
+	userInfo, err := showOwnUserInfoAllDao.ShowOwnUserInfoAll(userId)
+	if err != nil {
+		return e.ThrowError(e.ErrorDataBase)
+	}
+	userInfo["avatar"] = conf.Host + conf.HttpPort + conf.AvatarPath + userInfo["avatar"].(string)
+	userInfo["password"] = tool.Encrypt.AesDecoding(userInfo["password"].(string))
+	getNoteInfoLessDao := dao.NewNoteDaoByDb(showOwnUserInfoAllDao.DB)
+	noteInfo, err := getNoteInfoLessDao.GetNotesByUserId(userId)
+	if err != nil {
+		return e.ThrowError(e.ErrorDataBase)
+	}
+
+	getLikeNoteInfoDao := dao.NewNoteDaoByDb(getNoteInfoLessDao.DB)
+	likeNotesInfo, err := getLikeNoteInfoDao.GetLikeNotes(userId)
+	if err != nil {
+		return e.ThrowError(e.ErrorDataBase)
+	}
+
+	getFavoriteNoteInfoDao := dao.NewNoteDaoByDb(getLikeNoteInfoDao.DB)
+	favoriteNotesInfo, err := getFavoriteNoteInfoDao.GetFavoriteNotes(userId)
+	if err != nil {
+		return e.ThrowError(e.ErrorDataBase)
+	}
+
+	for _, item := range noteInfo {
+		path := item["file_path"].(string)
+		file := conf.Host + conf.HttpPort + path + "0.jpg"
+		var v1 interface{} = file
+		item["file_path"] = v1
+		item["avatar"] = conf.Host + conf.HttpPort + conf.AvatarPath + item["avatar"].(string)
+	}
+
+	for _, item := range likeNotesInfo {
+		path := item["file_path"].(string)
+		file := conf.Host + conf.HttpPort + path + "0.jpg"
+		var v1 interface{} = file
+		item["file_path"] = v1
+		item["avatar"] = conf.Host + conf.HttpPort + conf.AvatarPath + item["avatar"].(string)
+	}
+
+	for _, item := range favoriteNotesInfo {
+		path := item["file_path"].(string)
+		file := conf.Host + conf.HttpPort + path + "0.jpg"
+		var v1 interface{} = file
+		item["file_path"] = v1
+		item["avatar"] = conf.Host + conf.HttpPort + conf.AvatarPath + item["avatar"].(string)
 	}
 	return tool.BuildUserInfoAll(userInfo, noteInfo, likeNotesInfo, favoriteNotesInfo)
 }
@@ -651,7 +754,100 @@ func (service *UserService) SearchUser(ctx context.Context) tool.Response {
 	searchUserDao := dao.NewUserDao(ctx)
 	users, count, err := searchUserDao.SearchUser(service.UserName)
 	if err != nil {
-		e.ThrowError(e.ErrorDataBase)
+		return e.ThrowError(e.ErrorDataBase)
 	}
 	return tool.BuildListResponse(serializer.BuildSearchUsers(users), uint(count))
+}
+
+func (service *UserService) GetUpdateInfo(ctx context.Context, userId string) tool.Response {
+	getUpdateInfoDao := dao.NewUserDao(ctx)
+	user, err := getUpdateInfoDao.GetUpdateInfo(userId)
+	if err != nil {
+		return e.ThrowError(e.ErrorDataBase)
+	}
+	user["avatar"] = conf.Host + conf.HttpPort + conf.AvatarPath + user["avatar"].(string)
+	user["password"] = tool.Encrypt.AesDecoding(user["password"].(string))
+	return tool.BuildListResponse(user, 1)
+}
+
+// todo:善后处理
+func (service *UserService) DeleteUser(ctx context.Context, userId string) tool.Response {
+	deleteUserDao := dao.NewUserDao(ctx)
+	err := deleteUserDao.DeleteUser(userId)
+	if err != nil {
+		return e.ThrowError(e.ErrorDataBase)
+	}
+	path := "C:\\Users\\15314\\GolandProjects\\SmallRedBook\\static\\imgs\\avatar\\user" + userId
+	err = os.RemoveAll(path)
+	if err != nil {
+		fmt.Println(err)
+	}
+	return e.ThrowSuccess()
+}
+
+func (service *UserService) AdminShowInfo(ctx context.Context) tool.Response {
+	adminShowInfoDao := dao.NewUserDao(ctx)
+	users, err := adminShowInfoDao.AdminShowInfo()
+	if err != nil {
+		return e.ThrowError(e.ErrorDataBase)
+	}
+	for _, user := range users {
+		user["password"] = tool.Encrypt.AesDecoding(user["password"].(string))
+	}
+	return tool.BuildListResponse(users, uint(len(users)))
+}
+
+func (service *UserService) AddUser(ctx context.Context) tool.Response {
+	userDao := dao.NewUserDao(ctx)
+	exist, err := userDao.ExistEmailOrNot(service.Email)
+	if err != nil {
+		return e.ThrowError(e.ErrorDataBase)
+	}
+	if exist {
+		return e.ThrowError(e.ExistEmail)
+	}
+
+	// 判断密码长度
+	if len(service.Password) < 8 {
+		return e.ThrowError(e.PasswordIsShort)
+	}
+
+	// 生成唯一ID
+	snowflake.SetMachineId(12)
+	userId := strconv.Itoa(int(snowflake.GetId()))
+	file, _ := os.OpenFile("C:\\Users\\15314\\GolandProjects\\SmallRedBook\\static\\imgs\\avatar\\avatar.png", os.O_RDONLY, 0755)
+	avatar := (multipart.File)(file)
+	path, err := UploadAvatarToLocalStatic(avatar, userId, service.UserName)
+	if err != nil {
+		return e.ThrowError(e.UploadAvatarToLocalStaticError)
+	}
+
+	// 数据初始化
+	user := &model.User{
+		UserId:       userId,
+		UserName:     service.UserName,
+		Email:        service.Email,
+		Password:     tool.Encrypt.AesEncoding(service.Password),
+		Avatar:       path,
+		Introduction: service.Introduction,
+		Sex:          service.Sex,
+		CreatedAt:    time.Now().Format("2006-01-02 15:04:05"),
+		UpdatedAt:    time.Now().Format("2006-01-02 15:04:05"),
+	}
+
+	// 插入数据
+	err = userDao.CreateUser(user)
+	if err != nil {
+		return e.ThrowError(e.ErrorDataBase)
+	}
+	return e.ThrowSuccess()
+}
+
+func (service *UserService) GetFollowUserNotes(ctx context.Context, userId string) tool.Response {
+	getFavoriteUserNotesDao := dao.NewUserDao(ctx)
+	notes, count, err := getFavoriteUserNotesDao.GetFollowUserNotes(userId)
+	if err != nil {
+		return e.ThrowError(e.ErrorDataBase)
+	}
+	return tool.BuildListResponse(notes, uint(count))
 }

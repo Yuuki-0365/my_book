@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+        <meta charset="utf-8">
+        <title>login</title>
+        <link rel="stylesheet" type="text/css" href="css/loginAndRegister.css"/>
+        <script>
+                window.onload = function () {
+                        document.getElementById("loginByEmail").onclick = function() {
+                                window.location = "./loginByEmail.html";
+                        }
+                        document.getElementById("register").onclick = function() {
+                                window.location = "./register.html";
+                        }
+                }
+                function login() {
+                        let user_id = document.getElementById("user_id").value;
+                        let password = document.getElementById("password").value;
+                        // let file = document.getElementById("file").value
+                        if (user_id == "") {
+                                document.getElementById("user_id").focus();
+                                return
+                        }
+                        if (password == "") {
+                                document.getElementById("password").focus();
+                                return
+                        }
+                        var xhttp = new XMLHttpRequest();
+                        var formData = new FormData();
+                        formData.append("user_id", user_id);
+                        formData.append("password", password);
+                        xhttp.open("POST", "http://localhost:3000/api/user/login/userId", true);
+                        xhttp.send(formData);
+                        xhttp.onreadystatechange = function () {
+                                if (this.readyState == 4 && this.status == 200) {
+                                        var data = JSON.parse(this.responseText);
+                                        if (data.msg == "数据库查询出错") {
+                                                alert("账号或密码错误");
+                                                return;
+                                        }
+                                        else if (data.msg != "ok") {
+                                                alert(data.msg);
+                                                return;
+                                        } else {
+                                                sessionStorage.setItem("token", data.data.token);
+                                                alert("登录成功");
+                                        }
+                                        if (user_id == "305712698644021248") {
+                                                window.location="./admin.html";
+                                        } else {
+                                                window.location="./user_home.html";
+                                        }
+                                }
+                        }
+                }
+        </script>
+</head>
+<body>
+<div class="control">
+        <div class="item">
+                <div id="loginByEmail">邮箱登录</div><div class="active">账号登录</div><div id="register">注册</div>
+        </div>
+        <div class="content">
+                <div style="display: block;">
+                        <div class="input">
+                                <br>
+                                <div class="input_button">
+                                        <img src="./icon/用户名.png">
+                                        <input style="border: none" type="text" placeholder="请输入账号" id="user_id"/>
+                                </div>
+                        </div>
+                        <div class="input">
+                                <br>
+                                <div class="input_button">
+                                        <img src="./icon/密码.png">
+                                        <input style="border: none" type="password" placeholder="请输入密码" id="password"/>
+                                </div>
+                        </div>
+                        <div class="input">
+                                <input type="submit" value="登录" onclick="login()"/>
+                        </div>
+                </div>
+        </div>
+</div>
+<img src="地球.png" id="earth">
+</body>
+</html>
+
+

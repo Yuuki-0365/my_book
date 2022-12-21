@@ -1,0 +1,176 @@
+<html>
+<head>
+    <title>管理员界面</title>
+    <link href="./css/admin.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+<div style="text-align:center">
+    <table>
+        <p>用户信息列表</p>
+        <input type="button" value="添加" onclick="addMyRow();">
+    </table>
+    <table id ="table1" class="writable" >
+        <thead>
+        <tr>
+            <th>序号</th>
+            <th>注册时间</th>
+            <th>更新时间</th>
+            <th>账号</th>
+            <th>用户名</th>
+            <th>邮箱</th>
+            <th>密码</th>
+            <th>简介</th>
+            <th>性别</th>
+        </tr>
+        </thead>
+        <tbody id="myBody">
+        </tbody>
+    </table>
+</div>
+
+</body>
+</html>
+<script>
+    //全局变量
+    var i = 0;
+
+    window.onload = function () {
+        let xhttp = new XMLHttpRequest();
+        let formData = new FormData();
+        xhttp.open("POST", "http://localhost:3000/api/user/admin/info", true);
+        xhttp.send(formData);
+        xhttp.onreadystatechange = function () {
+            if (this.readyState == 4 && this.status == 200) {
+                var data = JSON.parse(this.responseText);
+                if (data.msg!="ok") {
+                    alert(data.error);
+                    return;
+                }
+                var count = data.data.total;
+                for (j = 0; j < count; j++) {
+                    var obj1= eval(data.data.item);
+                    addMyRow();
+                    document.getElementById("created_at"+(i-1)).value=obj1[i-1].created_at;
+                    document.getElementById("updated_at"+(i-1)).value=obj1[i-1].updated_at;
+                    document.getElementById("user_id"+(i-1)).value=obj1[i-1].user_id;
+                    document.getElementById("user_name"+(i-1)).value=obj1[i-1].user_name;
+                    document.getElementById("email"+(i-1)).value=obj1[i-1].email;
+                    document.getElementById("password"+(i-1)).value=obj1[i-1].password;
+                    document.getElementById("introduction"+(i-1)).value=obj1[i-1].introduction;
+                    document.getElementById("sex"+(i-1)).value=obj1[i-1].sex;
+                }
+            }
+        }
+    }
+
+    /**增加一行记录**/
+    function addMyRow(){
+        var myTable = document.getElementById("myBody");
+        var myTr = myTable.insertRow();    //插入行
+        myTr.setAttribute("id","tr"+i);    //设定行id
+        //插入行单元格的值
+        myTr.insertCell(0).innerHTML = i+1;
+        myTr.insertCell(1).innerHTML="<input disabled='disabled' style='width: 130px' type='text' class='underline' id='created_at"+i+"'  value='' />";
+        myTr.insertCell(2).innerHTML="<input disabled='disabled' style='width: 130px' type='text' class='underline' id='updated_at"+i+"'  value='' />";
+        myTr.insertCell(3).innerHTML="<input disabled='disabled' style='width: 150px' type='text' class='underline' id='user_id"+i+"'  value='' />";
+        myTr.insertCell(4).innerHTML="<input style='width: 130px' type='text' class='underline' id='user_name"+i+"'   value=''/>";
+        myTr.insertCell(5).innerHTML="<input style='width: 150px' type='text' class='underline' id='email"+i+"' value=''/>";
+        myTr.insertCell(6).innerHTML="<input style='width: 130px' type='text' class='underline' id='password"+i+"'  value=''/>";
+        myTr.insertCell(7).innerHTML="<input style='width: 400px' type='text' class='underline' id='introduction"+i+"'  value=''/>";
+        myTr.insertCell(8).innerHTML="<input style='width: 40px' type='text' class='underline' id='sex"+i+"'  value=''/>";
+        myTr.insertCell(9).innerHTML="<input style='width: 80px' type='button' value='更新' name='updateButton' onclick='updateMyRow1("+i+");'>";
+        myTr.insertCell(10).innerHTML="<input style='width: 80px' type='button' value='删除' name='deleteButton' onclick='delMyRow1("+i+");'>";
+        i++;
+    }
+
+    function resetRowIndex() {
+        var tBody = document.getElementById("myBody");
+        var rows = tBody.rows;
+        for(var i = 0;i<rows.length;i++){
+            rows[i].cells[0].innerHTML = i+1;
+        }
+    }
+
+    /***删除当前行 (根据行号删除)***/
+    function delMyRow1(j){
+        var r = window.confirm("确认删除用户吗？");
+        if (r == true) {
+            var myTable = document.getElementById("myBody");  // 获取到table对象
+            var myRow = document.getElementById("tr"+j);      // 获取到tr对象
+            myTable.deleteRow(myRow.rowIndex-1);              //trObject.rowIndex() rowIndex 属性返回某一行(rows )在表格的行集合中的位置（row index）。
+            resetRowIndex();   //重置序列号
+            let xhttp = new XMLHttpRequest();
+            let formData = new FormData();
+            xhttp.open("POST", "http://localhost:3000/api/user/admin/info/delete", true);
+            formData.append("user_id", myRow.children.item(3).children.item(0).value);
+            xhttp.send(formData);
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    var data = JSON.parse(this.responseText);
+                    if (data.msg != "ok") {
+                        alert(data.error);
+                        return;
+                    }
+                    alert("删除成功");
+                }
+            }
+        } else {
+            return;
+        }
+    }
+
+    function updateMyRow1(j) {
+        var myRow = document.getElementById("tr"+j);      //获取到tr对象
+        if (myRow.children.item(3).children.item(0).value == "") {
+            var r = window.confirm("确认添加用户吗？");
+            if (r == true) {
+                let xhttp = new XMLHttpRequest();
+                let formData = new FormData();
+                xhttp.open("POST", "http://localhost:3000/api/user/admin/info/add", true);
+                formData.append("user_name", myRow.children.item(4).children.item(0).value);
+                formData.append("email", myRow.children.item(5).children.item(0).value);
+                formData.append("password", myRow.children.item(6).children.item(0).value);
+                formData.append("introduction", myRow.children.item(7).children.item(0).value);
+                formData.append("sex" , myRow.children.item(8).children.item(0).value);
+                xhttp.send(formData);
+                xhttp.onreadystatechange = function () {
+                    if (this.readyState == 4 && this.status == 200) {
+                        var data = JSON.parse(this.responseText);
+                        if (data.msg != "ok") {
+                            alert(data.error);
+                            return;
+                        }
+                        alert("更新成功");
+                    }
+                }
+            } else {
+                return;
+            }
+        } else {
+            var r = window.confirm("确认修改用户吗？");
+            if (r == true) {
+                let xhttp = new XMLHttpRequest();
+                let formData = new FormData();
+                xhttp.open("POST", "http://localhost:3000/api/user/admin/info/update", true);
+                formData.append("user_id", myRow.children.item(3).children.item(0).value);
+                formData.append("user_name", myRow.children.item(4).children.item(0).value);
+                formData.append("email", myRow.children.item(5).children.item(0).value);
+                formData.append("password", myRow.children.item(6).children.item(0).value);
+                formData.append("introduction", myRow.children.item(7).children.item(0).value);
+                formData.append("sex" , myRow.children.item(8).children.item(0).value);
+                xhttp.send(formData);
+                xhttp.onreadystatechange = function () {
+                    if (this.readyState == 4 && this.status == 200) {
+                        var data = JSON.parse(this.responseText);
+                        if (data.msg != "ok") {
+                            alert(data.error);
+                            return;
+                        }
+                    }
+                }
+            } else {
+                return;
+            }
+        }
+    }
+</script>

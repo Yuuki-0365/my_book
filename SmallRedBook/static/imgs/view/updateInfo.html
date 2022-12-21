@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>修改页面</title>
+    <link rel="stylesheet" type="text/css" href="css/updateInfo.css"/>
+    <script>
+    window.onload = function () {
+            let xhttp = new XMLHttpRequest();
+            let formData = new FormData();
+            let token = sessionStorage.getItem("token")
+            xhttp.open("POST", "http://localhost:3000/api/authed/user/update/info/all", true);
+            xhttp.setRequestHeader("Authorization", token);
+            xhttp.send(formData);
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    var data = JSON.parse(this.responseText);
+                    if (data.msg!="ok") {
+                        alert(data.error);
+                        return;
+                    }
+                    document.getElementById("Name").innerHTML=data.data.item.user_name;
+                    document.getElementById("Id").innerHTML=data.data.item.user_id;
+                    document.getElementById("Avatar").src = data.data.item.avatar;
+                    document.getElementById("Email").innerHTML =data.data.item.email;
+                    document.getElementById("Introduction").innerHTML = data.data.item.introduction;
+                    document.getElementById("Password").innerHTML = data.data.item.password;
+                    var sex = data.data.item.sex;
+                    if (sex == "男") {
+                        document.getElementById("Sex").src = "http://127.0.0.1:3000/static/imgs/view/icon/%E7%94%B7.png";
+                    } else if(sex == "女") {
+                        document.getElementById("Sex").src = "http://127.0.0.1:3000/static/imgs/view/icon/%E5%A5%B3.png";
+                    }
+                }
+            }
+        }
+        function deleteUser() {
+            let xhttp = new XMLHttpRequest();
+            let formData = new FormData();
+            let token = sessionStorage.getItem("token");
+            xhttp.open("POST", "http://localhost:3000/api/authed/user/delete", true);
+            xhttp.setRequestHeader("Authorization", token);
+            var r = window.confirm("确认注销账户吗？")
+            if (r == true) {
+                xhttp.send(formData);
+                xhttp.onreadystatechange = function () {
+                    if (this.readyState == 4 && this.status == 200) {
+                        var data = JSON.parse(this.responseText);
+                        if (data.msg!="ok") {
+                            alert(data.error);
+                            return;
+                        }
+                    }
+
+                }
+                window.location = "./register.html";
+                return;
+            }else {
+                return;
+            }
+
+        }
+        function edit_sex() {
+            let xhttp = new XMLHttpRequest();
+            let formData = new FormData();
+            let token = sessionStorage.getItem("token")
+            xhttp.open("POST", "http://localhost:3000/api/authed/user/update/info", true);
+            xhttp.setRequestHeader("Authorization", token);
+            let sex = prompt("请输入修改后的性别：");
+            if (sex == null) {
+                return;
+            }
+            var r = window.confirm("确认修改后的性别为："+ sex + "吗？")
+            if (r == true) {
+                formData.append("sex", sex);
+                xhttp.send(formData);
+                xhttp.onreadystatechange = function () {
+                    if (this.readyState == 4 && this.status == 200) {
+                        var data = JSON.parse(this.responseText);
+                        if (data.msg!="ok") {
+                            alert(data.error);
+                            return;
+                        }
+                        if (sex == "男") {
+                            document.getElementById("Sex").src = "http://127.0.0.1:3000/static/imgs/view/icon/%E7%94%B7.png";
+                        } else if(sex == "女") {
+                            document.getElementById("Sex").src = "http://127.0.0.1:3000/static/imgs/view/icon/%E5%A5%B3.png";
+                        }
+                    }
+                }
+            } else {
+                return;
+            }
+        }
+        function edit_user_name() {
+            let xhttp = new XMLHttpRequest();
+            let formData = new FormData();
+            let token = sessionStorage.getItem("token")
+            xhttp.open("POST", "http://localhost:3000/api/authed/user/update/info", true);
+            xhttp.setRequestHeader("Authorization", token);
+            let userName = prompt("请输入修改后的用户名：");
+            if (userName == null) {
+                return;
+            }
+            var r = window.confirm("确认修改后的用户名为："+ userName + "吗？")
+            if (r == true) {
+                formData.append("user_name", userName);
+                xhttp.send(formData);
+                xhttp.onreadystatechange = function () {
+                    if (this.readyState == 4 && this.status == 200) {
+                        var data = JSON.parse(this.responseText);
+                        if (data.msg!="ok") {
+                            alert(data.error);
+                            return;
+                        }
+                    }
+                }
+            } else {
+                return;
+            }
+        }
+        function edit_introduction() {
+            let xhttp = new XMLHttpRequest();
+            let formData = new FormData();
+            let token = sessionStorage.getItem("token")
+            xhttp.open("POST", "http://localhost:3000/api/authed/user/update/info", true);
+            xhttp.setRequestHeader("Authorization", token);
+            let Introduction = prompt("请输入修改后的签名：");
+            if (Introduction == null) {
+                return;
+            }
+            if (Introduction.length > 40) {
+                alert("签名太长了，注意最大长度为40");
+                return;
+            }
+            var r = window.confirm("确认修改后的签名为："+ Introduction + "吗？")
+            if (r == true) {
+                formData.append("introduction", Introduction);
+                xhttp.send(formData);
+                xhttp.onreadystatechange = function () {
+                    if (this.readyState == 4 && this.status == 200) {
+                        var data = JSON.parse(this.responseText);
+                        if (data.msg!="ok") {
+                            alert(data.error);
+                            return;
+                        }
+                    }
+                }
+            } else {
+                return;
+            }
+        }
+        function edit_email() {
+            let xhttp = new XMLHttpRequest();
+            let formData = new FormData();
+            let token = sessionStorage.getItem("token")
+            xhttp.open("POST", "http://localhost:3000/api/authed/user/update/info", true);
+            xhttp.setRequestHeader("Authorization", token);
+            let Email = prompt("请输入修改后的邮箱：");
+            if (Email == null) {
+                return;
+            }
+            var r = window.confirm("确认修改后的邮箱为："+ Email + "吗？")
+            if (r == true) {
+                formData.append("email", Email);
+                xhttp.send(formData);
+                xhttp.onreadystatechange = function () {
+                    if (this.readyState == 4 && this.status == 200) {
+                        var data = JSON.parse(this.responseText);
+                        if (data.msg!="ok") {
+                            alert(data.error);
+                            return;
+                        }
+                    }
+                }
+            } else {
+                return;
+            }
+        }
+        function edit_password() {
+            let xhttp = new XMLHttpRequest();
+            let formData = new FormData();
+            let token = sessionStorage.getItem("token")
+            xhttp.open("POST", "http://localhost:3000/api/authed/user/update/info", true);
+            xhttp.setRequestHeader("Authorization", token);
+            let Password = prompt("请输入修改后的密码：");
+            if (Password == null) {
+                return;
+            }
+            var r = window.confirm("确认修改后的密码为："+ Password + "吗？")
+            if (r == true) {
+                formData.append("password", Password);
+                xhttp.send(formData);
+                xhttp.onreadystatechange = function () {
+                    if (this.readyState == 4 && this.status == 200) {
+                        var data = JSON.parse(this.responseText);
+                        if (data.msg!="ok") {
+                            alert(data.error);
+                            return;
+                        }
+                    }
+                }
+            } else {
+                return;
+            }
+        }
+        function upload_avatar() {
+            var r = window.confirm("确认修改头像吗？");
+            if (r == true) {
+                let xhttp = new XMLHttpRequest();
+                let formData = new FormData();
+                let token = sessionStorage.getItem("token")
+                xhttp.open("POST", "http://localhost:3000/api/authed/user/update/info", true);
+                xhttp.setRequestHeader("Authorization", token);
+                formData.append("file", document.getElementById("btn_file").files[0]);
+                xhttp.send(formData);
+                xhttp.onreadystatechange = function () {
+                    if (this.readyState == 4 && this.status == 200) {
+                        var data = JSON.parse(this.responseText);
+                        if (data.msg!="ok") {
+                            alert(data.error);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="main">
+        <div class="content">
+            <div class="avatar">
+                <img id="Avatar" class="avatar_img">
+            </div>
+            <div class="UploadAvatar">
+                <form id="form">
+                    <input type="file" id="btn_file" accept="image/*">
+                    <button onclick="upload_avatar()">确认</button>
+                </form>
+            </div>
+            <div class="user_name">
+                <img src="./icon/用户名.png">
+                <span id="Name"></span>
+                <img src="./icon/编辑.png" class="Edit" onclick="edit_user_name()">
+            </div>
+            <div class="user_id">
+                <img src="./icon/账号.png">
+                <span id="Id"></span>
+            </div>
+            <div class="introduction">
+                <img src="./icon/签名.png">
+                <span id="Introduction"></span>
+                <img src="./icon/编辑.png" class="Edit" onclick="edit_introduction()">
+            </div>
+            <div class="email">
+                <img src="./icon/邮箱.png">
+                <span id="Email"></span>
+                <img src="./icon/编辑.png" class="Edit" onclick="edit_email()">
+            </div>
+            <div class="password">
+                <img src="./icon/密码.png">
+                <span id="Password" style="visibility: hidden;"></span>
+                <img src="./icon/编辑.png" class="Edit" onclick="edit_password()">
+            </div>
+            <div class="sex">
+                <img id="Sex" onclick="edit_sex()">
+            </div>
+        </div>
+        <div class="decorate">
+            <img src="choose.png">
+        </div>
+        <div>
+            <button class="delete" type="button" onclick="deleteUser()">注销用户</button>
+        </div>
+    </div>
+</body>
+</html>

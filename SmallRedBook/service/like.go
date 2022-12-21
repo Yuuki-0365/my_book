@@ -17,41 +17,47 @@ type LikeService struct {
 func (service *LikeService) LikeNote(ctx context.Context, userId string) tool.Response {
 	likeNoteDao := dao.NewLikeDao(ctx)
 	id, _ := strconv.Atoi(service.NoteId)
-	count, err := likeNoteDao.LikeOrNot(userId, int64(id))
-	if err != nil {
-		return e.ThrowError(e.ErrorDataBase)
-	}
-	if count != 0 {
-		return e.ThrowError(e.HasLiked)
-	}
-
-	like := &model.Like{
-		CreateAt: time.Now().Format("2006-01-02 15:04:05"),
-		UpdateAt: time.Now().Format("2006-01-02 15:04:05"),
-		UserId:   userId,
-		NoteId:   uint(id),
-	}
-	err = likeNoteDao.LikeNote(like)
-	if err != nil {
-		return e.ThrowError(e.ErrorDataBase)
-	}
-	return e.ThrowSuccess()
-}
-
-func (service *LikeService) UnLikeNote(ctx context.Context, userId string) tool.Response {
-	unLikeNoteDao := dao.NewLikeDao(ctx)
-	id, _ := strconv.Atoi(service.NoteId)
-	count, err := unLikeNoteDao.LikeOrNot(userId, int64(id))
+	Like, count, err := likeNoteDao.LikeOrNot(userId, int64(id))
 	if err != nil {
 		return e.ThrowError(e.ErrorDataBase)
 	}
 	if count == 0 {
-		return e.ThrowError(e.HasNotLiked)
+		like := &model.Like{
+			CreateAt: time.Now().Format("2006-01-02 15:04:05"),
+			UpdateAt: time.Now().Format("2006-01-02 15:04:05"),
+			UserId:   userId,
+			NoteId:   uint(id),
+			IsLiked:  true,
+		}
+		err = likeNoteDao.CreateLikeNote(like)
+		if err != nil {
+			return e.ThrowError(e.ErrorDataBase)
+		}
+		return tool.Response{
+			Status: e.Success,
+			Msg:    e.GetMsg(e.HasNotLiked),
+		}
 	}
-
-	err = unLikeNoteDao.UnLikeNote(userId, int64(id))
-	if err != nil {
-		return e.ThrowError(e.ErrorDataBase)
+	if count == 1 {
+		if Like.IsLiked == true {
+			err = likeNoteDao.UnLike(userId, int64(id))
+			if err != nil {
+				return e.ThrowError(e.ErrorDataBase)
+			}
+			return tool.Response{
+				Status: e.Success,
+				Msg:    e.GetMsg(e.HasLiked),
+			}
+		} else {
+			err = likeNoteDao.Like(userId, int64(id))
+			if err != nil {
+				return e.ThrowError(e.ErrorDataBase)
+			}
+			return tool.Response{
+				Status: e.Success,
+				Msg:    e.GetMsg(e.HasNotLiked),
+			}
+		}
 	}
-	return e.ThrowSuccess()
+	return e.ThrowError(e.Error)
 }

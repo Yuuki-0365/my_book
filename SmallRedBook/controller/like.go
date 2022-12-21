@@ -18,15 +18,3 @@ func LikeNote(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, ErrorResponse(err))
 	}
 }
-
-func UnLikeNote(c *gin.Context) {
-	var unLikeNoteService service.LikeService
-
-	claims, _ := tool.ParseToken(c.GetHeader("Authorization"))
-	if err := c.ShouldBind(&unLikeNoteService); err == nil {
-		res := unLikeNoteService.UnLikeNote(c.Request.Context(), claims.UserId)
-		c.JSON(http.StatusOK, res)
-	} else {
-		c.JSON(http.StatusBadRequest, ErrorResponse(err))
-	}
-}

@@ -15,8 +15,7 @@ const (
 	LoginByIdError
 	NotExistEmail
 	ErrorAuthToken
-	NotFollow
-	HasFollowed
+	NotFollowTogether
 	FollowTogether
 	ErrorOldPassword
 	OldVcodeNotMatch
@@ -30,6 +29,10 @@ const (
 	HasNotLiked
 	HasFavorited
 	HasNotFavorited
+	HasFollowed
+	HasNotFollowed
 	HasComment
 	HasNotComment
+	NotFollow
+	Follow
 )

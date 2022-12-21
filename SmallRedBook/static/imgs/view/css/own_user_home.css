@@ -1,0 +1,173 @@
+*{
+    margin: 0;
+    padding: 0;
+}
+body {
+    background-image: url("../home.jpg");
+}
+.main {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    min-width: 1000px;
+    min-height: 745px;
+}
+.top {
+    height: 30%;
+    float: left;
+    width: 100%;
+}
+.bottom {
+    height: 70%;
+    float: left;
+    width: 100%;
+}
+.avatar {
+    position: absolute;
+    top: 7%;
+    bottom: 72%;
+    right: 84%;
+    left: 7%;
+}
+
+.user_name {
+    align-content: center;
+    position: absolute;
+    top: 7%;
+    bottom: 86%;
+    right: 60%;
+    left: 19%;
+}
+
+.user_id {
+    position: absolute;
+    top: 22%;
+    bottom: 72%;
+    right: 60%;
+    left: 19%;
+}
+
+.introduction {
+    position: absolute;
+    top: 14%;
+    bottom: 79%;
+    right: 35%;
+    left: 19%;
+}
+
+.follow_count {
+    position: absolute;
+    top: 20%;
+    bottom: 74%;
+    right: 32%;
+    left: 63%;
+}
+
+.fan_count {
+    position: absolute;
+    top:20%;
+    bottom: 74%;
+    right: 25%;
+    left: 70%;
+}
+
+.note_count {
+    position: absolute;
+    top :20%;
+    bottom: 74%;
+    right: 18%;
+    left: 77%;
+}
+
+.edit_information {
+    position: absolute;
+    top: 25%;
+    left: 90%;
+}
+
+.avatar_img {
+    width: 100%;
+    height: 100%;
+}
+
+.user_name img {
+    width: 15%;
+    vertical-align: middle;
+}
+.user_name span {
+    vertical-align: middle;
+}
+.user_id img {
+    width: 15%;
+    vertical-align: middle;
+}
+.user_id span {
+    vertical-align: middle;
+}
+.introduction img {
+    width: 8%;
+    vertical-align: middle;
+}
+.introduction span {
+    vertical-align: middle;
+}
+
+.follow_count img {
+    width: 50%;
+    vertical-align: middle;
+}
+
+.follow_count span {
+    vertical-align: middle;
+}
+
+.fan_count img {
+    width: 50%;
+    vertical-align: middle;
+}
+
+.follow_count span {
+    vertical-align: middle;
+}
+
+.note_count img {
+    width: 50%;
+    vertical-align: middle;
+}
+
+.note_count span {
+    vertical-align: middle;
+}
+
+#edit{
+    background-color: #DDDDDD;
+    font-size: 15px;
+    border-radius: 5px;
+}
+
+.left_img {
+    position: absolute;
+    top:50%;
+    left: 10%;
+    right: 60%;
+    bottom: 10%;
+}
+
+.left_img img {
+    width: 100%;
+}
+.right_img {
+    position: absolute;
+    top:50%;
+    left: 60%;
+    bottom: 10%;
+    right: 10%;
+}
+
+
+.right_img img {
+    width: 100%;
+}

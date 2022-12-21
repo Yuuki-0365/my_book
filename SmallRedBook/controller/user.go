@@ -11,7 +11,6 @@ import (
 func UserRegisterCode(c *gin.Context) {
 	var userRegisterCodeService service.UserService
 	if err := c.ShouldBind(&userRegisterCodeService); err == nil {
-		fmt.Println(c.PostForm("email"))
 		res := userRegisterCodeService.GetRegisterCode(c.Request.Context())
 		c.JSON(http.StatusOK, res)
 	} else {
@@ -32,8 +31,7 @@ func UserLoginCode(c *gin.Context) {
 func UserRegister(c *gin.Context) {
 	var userRegisterService service.UserService
 	if err := c.ShouldBind(&userRegisterService); err == nil {
-		file, _, _ := c.Request.FormFile("file")
-		res := userRegisterService.Register(c.Request.Context(), file)
+		res := userRegisterService.Register(c.Request.Context())
 		c.JSON(http.StatusOK, res)
 	} else {
 		c.JSON(http.StatusBadRequest, ErrorResponse(err))
@@ -129,22 +127,12 @@ func UserFollow(c *gin.Context) {
 	}
 }
 
-func UserUnFollow(c *gin.Context) {
-	var userUnFollowService service.UserService
-	claims, _ := tool.ParseToken(c.GetHeader("Authorization"))
-	if err := c.ShouldBind(&userUnFollowService); err == nil {
-		res := userUnFollowService.UserUnFollow(c.Request.Context(), claims.UserId, userUnFollowService.UserId)
-		c.JSON(http.StatusOK, res)
-	} else {
-		c.JSON(http.StatusBadRequest, ErrorResponse(err))
-	}
-}
-
 func FollowTogether(c *gin.Context) {
-	var userFollowTogetherService service.UserService
+	var followTogetherService service.UserService
+
 	claims, _ := tool.ParseToken(c.GetHeader("Authorization"))
-	if err := c.ShouldBind(&userFollowTogetherService); err == nil {
-		res := userFollowTogetherService.UserFollowTogether(c.Request.Context(), claims.UserId, userFollowTogetherService.UserId)
+	if err := c.ShouldBind(&followTogetherService); err == nil {
+		res := followTogetherService.FollowTogether(c.Request.Context(), claims.UserId)
 		c.JSON(http.StatusOK, res)
 	} else {
 		c.JSON(http.StatusBadRequest, ErrorResponse(err))
@@ -242,7 +230,18 @@ func ShowUserInfoInUpdate(c *gin.Context) {
 func ShowUserInfoAll(c *gin.Context) {
 	var showUserInfoAllService service.UserService
 	if err := c.ShouldBind(&showUserInfoAllService); err == nil {
-		res := showUserInfoAllService.ShowUserInfoAll(c.Request.Context())
+		res := showUserInfoAllService.ShowUserInfoAll(c.Request.Context(), showUserInfoAllService.UserId)
+		c.JSON(http.StatusOK, res)
+	} else {
+		c.JSON(http.StatusBadRequest, ErrorResponse(err))
+	}
+}
+
+func ShowOwnUserInfoAll(c *gin.Context) {
+	var showOwnUserInfoAllService service.UserService
+	claims, _ := tool.ParseToken(c.GetHeader("Authorization"))
+	if err := c.ShouldBind(&showOwnUserInfoAllService); err == nil {
+		res := showOwnUserInfoAllService.ShowOwnUserInfoAll(c.Request.Context(), claims.UserId)
 		c.JSON(http.StatusOK, res)
 	} else {
 		c.JSON(http.StatusBadRequest, ErrorResponse(err))
@@ -253,6 +252,81 @@ func SearchUser(c *gin.Context) {
 	var searchUserService service.UserService
 	if err := c.ShouldBind(&searchUserService); err == nil {
 		res := searchUserService.SearchUser(c.Request.Context())
+		c.JSON(http.StatusOK, res)
+	} else {
+		c.JSON(http.StatusBadRequest, ErrorResponse(err))
+	}
+}
+
+func GetUserUpdateInfo(c *gin.Context) {
+	var getUserUpdateInfoService service.UserService
+	claims, _ := tool.ParseToken(c.GetHeader("Authorization"))
+	if err := c.ShouldBind(&getUserUpdateInfoService); err == nil {
+		res := getUserUpdateInfoService.GetUpdateInfo(c.Request.Context(), claims.UserId)
+		c.JSON(http.StatusOK, res)
+	} else {
+		c.JSON(http.StatusBadRequest, ErrorResponse(err))
+	}
+}
+
+func DeleteUser(c *gin.Context) {
+	var deleteUserService service.UserService
+	claims, _ := tool.ParseToken(c.GetHeader("Authorization"))
+	if err := c.ShouldBind(&deleteUserService); err == nil {
+		res := deleteUserService.DeleteUser(c.Request.Context(), claims.UserId)
+		c.JSON(http.StatusOK, res)
+	} else {
+		c.JSON(http.StatusBadRequest, ErrorResponse(err))
+	}
+}
+
+func AdminShowInfo(c *gin.Context) {
+	var adminShowInfo service.UserService
+	if err := c.ShouldBind(&adminShowInfo); err == nil {
+		res := adminShowInfo.AdminShowInfo(c.Request.Context())
+		c.JSON(http.StatusOK, res)
+	} else {
+		c.JSON(http.StatusBadRequest, ErrorResponse(err))
+	}
+}
+
+func AdminUpdateInfo(c *gin.Context) {
+	var adminUpdateInfoService service.UserService
+
+	if err := c.ShouldBind(&adminUpdateInfoService); err == nil {
+		res := adminUpdateInfoService.UpdateInfo(c.Request.Context(), adminUpdateInfoService.UserId)
+		fmt.Println(adminUpdateInfoService.UserId)
+		c.JSON(http.StatusOK, res)
+	} else {
+		c.JSON(http.StatusBadRequest, ErrorResponse(err))
+	}
+}
+
+func AdminDeleteUser(c *gin.Context) {
+	var adminDeleteInfoService service.UserService
+	if err := c.ShouldBind(&adminDeleteInfoService); err == nil {
+		res := adminDeleteInfoService.DeleteUser(c.Request.Context(), adminDeleteInfoService.UserId)
+		c.JSON(http.StatusOK, res)
+	} else {
+		c.JSON(http.StatusBadRequest, ErrorResponse(err))
+	}
+}
+
+func AdminAddUser(c *gin.Context) {
+	var adminAddUserService service.UserService
+	if err := c.ShouldBind(&adminAddUserService); err == nil {
+		res := adminAddUserService.AddUser(c.Request.Context())
+		c.JSON(http.StatusOK, res)
+	} else {
+		c.JSON(http.StatusBadRequest, ErrorResponse(err))
+	}
+}
+
+func GetFollowUserNotes(c *gin.Context) {
+	var getFollowUserNotesService service.UserService
+	claims, _ := tool.ParseToken(c.GetHeader("Authorization"))
+	if err := c.ShouldBind(&getFollowUserNotesService); err == nil {
+		res := getFollowUserNotesService.GetFollowUserNotes(c.Request.Context(), claims.UserId)
 		c.JSON(http.StatusOK, res)
 	} else {
 		c.JSON(http.StatusBadRequest, ErrorResponse(err))

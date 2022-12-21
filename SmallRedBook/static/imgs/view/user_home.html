@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>主页</title>
+    <link rel="stylesheet" type="text/css" href="css/own_user_home.css"/>
+    <script>
+        window.onload=function () {
+            let xhttp = new XMLHttpRequest();
+            let formData = new FormData();
+            let token = sessionStorage.getItem("token");
+            xhttp.open("POST", "http://localhost:3000/api/authed/user/info/all", true);
+            xhttp.setRequestHeader("Authorization", token);
+            xhttp.send(formData);
+            xhttp.onreadystatechange = function () {
+                if (this.readyState == 4 && this.status == 200) {
+                    var data = JSON.parse(this.responseText);
+                    document.getElementById("Name").innerHTML=data.data.user_info.user_name;
+                    document.getElementById("Id").innerHTML=data.data.user_info.user_id;
+                    document.getElementById("Introduction").innerHTML=data.data.user_info.introduction;
+                    document.getElementById("Follow_count").innerHTML=data.data.user_info.follow_count;
+                    document.getElementById("Fan_count").innerHTML=data.data.user_info.fan_count;
+                    document.getElementById("Note_count").innerHTML=data.data.user_info.note_count;
+                    document.getElementById("Avatar").src = data.data.user_info.avatar;
+                }
+            }
+        }
+        function updateInfo() {
+            window.location = "./updateInfo.html";
+        }
+    </script>
+</head>
+<body>
+<div class="main">
+    <div class="top">
+        <div class="avatar">
+            <img id="Avatar" class="avatar_img">
+        </div>
+        <div class="user_name">
+            <img src="./icon/用户名.png">
+            <span id = "Name"></span>
+        </div>
+        <div class="user_id">
+            <img src="./icon/账号.png">
+            <span id = "Id"></span>
+        </div>
+        <div class="introduction">
+            <img src="./icon/签名.png">
+            <span id="Introduction">
+            </span>
+        </div>
+        <div class="follow_count">
+            <img src="./icon/关注.png">
+            <span id="Follow_count"></span>
+        </div>
+        <div class="fan_count">
+            <img src="./icon/粉丝.png">
+            <span id="Fan_count"></span>
+        </div>
+        <div class="note_count">
+            <img src="./icon/笔记.png">
+            <span id="Note_count"></span>
+        </div>
+        <div class="edit_information">
+            <button id="edit" type="button" onclick="updateInfo()">修改资料</button>
+        </div>
+    </div>
+    <div class="bottom">
+    </div>
+    <div class="left_img">
+        <img src="查找学习.png">
+    </div>
+    <div class="right_img">
+        <img src="无人机运输.png">
+    </div>
+</div>
+</body>
+</html>
